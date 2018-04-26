@@ -195,3 +195,5 @@ def rowlist_to_html_css(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivide
 if __name__ == "__main__":
     from ._exec import main
     main()
+
+    
