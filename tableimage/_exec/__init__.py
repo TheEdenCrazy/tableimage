@@ -9,6 +9,49 @@ from PIL import Image
 from .._typing import *
 
 
+class FileTypeWithAppendMode(object):
+    """Factory for creating file object types
+
+    Instances of FileType are typically passed as type= arguments to the
+    ArgumentParser add_argument() method.
+
+    Based on the class from argparse, but allowing for certain stuff with mode a where the primary purpose is writing.
+    """
+
+    def __init__(self, mode='r', bufsize=-1, encoding=None, errors=None):
+        self._mode = mode
+        self._bufsize = bufsize
+        self._encoding = encoding
+        self._errors = errors
+
+    def __call__(self, string):
+        # the special argument "-" means sys.std{in,out}
+        if string == '-':
+            if 'r' in self._mode:
+                return _sys.stdin
+            elif 'w' in self._mode or 'a' in self._mode:
+                return _sys.stdout
+            else:
+                msg = _('argument "-" with mode %r') % self._mode
+                raise ValueError(msg)
+
+        # all other arguments are used as file names
+        try:
+            return open(string, self._mode, self._bufsize, self._encoding,
+                        self._errors)
+        except OSError as e:
+            message = _("can't open '%s': %s")
+            raise ArgumentTypeError(message % (string, e))
+
+    def __repr__(self):
+        args = self._mode, self._bufsize
+        kwargs = [('encoding', self._encoding), ('errors', self._errors)]
+        args_str = ', '.join([repr(arg) for arg in args if arg != -1] +
+                             ['%s=%r' % (kw, arg) for kw, arg in kwargs
+                              if arg is not None])
+        return '%s(%s)' % (type(self).__name__, args_str)
+
+
 def make_parser() -> argparse.ArgumentParser:
     """
     Create a parser for the command-line args.
@@ -32,16 +75,17 @@ def make_parser() -> argparse.ArgumentParser:
         "--full-document", action='store_true', default=False, help=info.full_document_info
     )
 
-    output_group = parser.add_mutually_exclusive_group(description=info.output_group_info)
+    output_group = parser.add_mutually_exclusive_group()  # Currently no support for descriptions. TODO: When argparse adds support 
+    # add it too.
 
-    # r+ opens the file for writing without erasing its contents. If we are in append mode, this means we can skip to the end without 
+    # a opens the file for writing without erasing its contents. If we are in append mode, this means we can skip to the end without 
     # destroying the file on open.
     # Combined output
-    output_group.add_argument('--combined', help=info.combined_output_info, default=None, type=argparse.FileType(mode='r+'), nargs="1")
+    output_group.add_argument('--combined', help=info.combined_output_info, default=None, type=FileTypeWithAppendMode(mode='a'))
 
     # Seperated output
     output_group.add_argument('--seperate', help=info.separate_output_info, 
-            default=None, type=argparse.FileType(mode='r+'), nargs=2, metavar=("<html file>", "<css file>"))
+            default=None, type=FileTypeWithAppendMode(mode='a'), nargs=2, metavar=("<html file>", "<css file>"))
 
     parser.add_argument(
         "--append", action='store_true', default=False, help=info.append_info
@@ -56,9 +100,9 @@ def make_parser() -> argparse.ArgumentParser:
             "--background-colour", 
             type=lambda x: min(255, max(0, int(x))), 
             default=(255, 255, 255), 
-            help=info.background_colour_info, 
-            metavar=("R", "G", "B"),
-            nargs=3
+            help=info.background_colour_info,
+            nargs=3,
+            metavar=("R", "G", "B",)
     )
     
     return parser
@@ -87,12 +131,12 @@ def to_full_html_document(html_template_chunk: str) -> str:
 
     return result
 
-def to_write_mode(file_in_read_plus_mode: file):
+def to_write_mode(file_in_read_plus_mode):
     """
-    Wipe a r+ file and seek to the beginning as if you just it in write mode.
+    Wipe a r+/a file and seek to the beginning as if you just it in write mode.
     """
-    file_in_read_plus_mode.truncate(0)
     file_in_read_plus_mode.seek(0, 0)
+    file_in_read_plus_mode.truncate(0)
 
 
 def main():
@@ -106,8 +150,8 @@ def main():
     # Now we can perform processes on them.
     html_and_css = {
         filename: rowlist_to_html_css(
-            data.PixelAccessPillow(image, background=parse_args.background_colour),
-            argparse.no_css, argparse.pixel_size
+            data.PixelAccessPillow(image, background=parsed_args.background_colour).getcontiguousrows(),
+            parsed_args.no_css, parsed_args.pixel_size
             ) for (image, filename) in images_and_fnames
     }
 
@@ -138,20 +182,20 @@ def main():
                 f.close()
 
     else:  # Now we can generate documents for each picture.
-        for basename, html_css_pair in html_and_css:
+        for basename, html_css_pair in html_and_css.items():
             html_component = html_css_pair[0]
             css_component = html_css_pair[1]
             if parsed_args.full_document:
                 html_component = to_full_html_document(combine_html_css(html_component, css_component))
                 css_component = ""
 
-            with open(basename + ".html", 'r+') as htmlfile:
+            with open(basename + ".html", 'a') as htmlfile:
                 if not parsed_args.append:
                     to_write_mode(htmlfile)
                 htmlfile.write(html_component)
 
             if len(css_component.strip()) > 0:
-                with open(basename + ".css", 'r+') as cssfile:
+                with open(basename + ".css", 'a') as cssfile:
                     if not parsed_args.append:
                         to_write_mode(cssfile)
                     cssfile.write(css_component)

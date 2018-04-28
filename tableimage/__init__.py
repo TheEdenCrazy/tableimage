@@ -48,8 +48,9 @@ def _encoding(count: Dict[T, int], alphabet: str="01") -> Dict[T, str]:
     Use the Huffman tree algorithm to generate an encoding from a set of counts.
     Duplicate characters in the alphabet are removed.
     """
+    
     # Remove duplicates
-    alphabet = "".join(set(a for a in alphabet)) 
+    alphabet = "".join(set((a for a in alphabet))) 
     
     # Generate nodes for the actual encoded colours in a tuple with their weight.
     queue = list((_Node(contents=item[0], branch_prefix=""), item[1]) for item in count.items())
@@ -58,7 +59,7 @@ def _encoding(count: Dict[T, int], alphabet: str="01") -> Dict[T, str]:
     leaf_nodes = list(item[0] for item in queue)
 
     while len(queue) > 1:
-        queue = queue.sort(key=lambda item: item[1], reverse=True)  # End bits have lowest weights.
+        queue.sort(key=lambda item: item[1], reverse=True)  # End bits have lowest weights.
         # Remove the end parts of the queue so each part can be assigned a letter in the alphabet.
         if len(queue) > len(alphabet):
             # Split 'n pop
@@ -81,7 +82,7 @@ def _encoding(count: Dict[T, int], alphabet: str="01") -> Dict[T, str]:
     return mapping
 
 
-def _to_palette(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivider]]) -> Dict[RGB, str]:
+def _to_palette(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivider]]) -> Dict[data.RGB, str]:
     """
     Turn an image specified by rowlist format into a string based palette of colours.
     """
@@ -98,14 +99,14 @@ def _to_palette(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivider]]) -> 
 
 def rgb_to_html(colour: data.RGB) -> str:
     """
-    Convert an RGB triplet into a HTML colour of the form "#ff0054" (or the 3-digit version if it can be shortened)
+    Convert an RGB triplet into a HTML colour of the form "#ff0054" (or the 3-digit version if it can be shortened, maybe, but not right now)
 
     Out of range numbers will be clamped.
     """
     colour = tuple(min(max(0, a), 255) for a in colour)
-    htmlcolour = "#" + "".join(hex(component)[2:] for component in colour)
-    if all(htmlcolour[2*i + 1] == htmlcolour[2*i+2] for i in range(3)):
-        htmlcolour = "#" + htmlcolour[1] + htmlcolour[3] + htmlcolour[5]
+    # Format to 2 hex digits with 0s padding
+    htmlcolour = "#" + "".join(format(component, '02x') for component in colour)
+    # TODO: Implement shortened htmlcolour 
     return htmlcolour
 
 
@@ -126,8 +127,8 @@ def rowlist_to_html_css(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivide
 
     # Turn the linear rowlist into a 2d set of rows.
     page_rows = []
+    currow = []
     for subrow in rowlist:
-        currow = []
         # We know rowlists always have data where a RowDivider is at the end.
         if subrow == data.RowDivider():
             page_rows.append(currow)
@@ -180,6 +181,7 @@ def rowlist_to_html_css(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivide
             html += '</tr>\n'
         html += '</table>\n'
 
+    
         # Now to generate CSS
 
         # First, apply the height to all tr children of the table

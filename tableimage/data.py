@@ -3,7 +3,7 @@ Contains a universal API for providing access to two-dimensional data, even with
 """
 import abc
 from ._typing import *
-import imagemanipulation
+from . import imagemanipulation
 try:
     from PIL import Image
     _has_pil=True
@@ -18,6 +18,9 @@ class RowDivider(object):
     """
     def __eq__(self, other) -> bool:
         return isinstance(other, RowDivider)
+
+    def __hash__(self) -> int:
+        return id(RowDivider)
 
 RGB=Tuple[int, int, int]
 
@@ -57,7 +60,8 @@ class PixelAccess(abc.ABC):
             for x in range(self.getsize()[0]):  # Go over all the pixels on the row.
                 pixel_colour = self.getpixel(x, y)
                 if curr_colour != pixel_colour:
-                    result.append((pixel_count, curr_colour))
+                    if curr_colour is not None: # Otherwise we get mysterious NoneTypes down the road.
+                        result.append((pixel_count, curr_colour))
                     curr_colour=pixel_colour
                     pixel_count=1
                 else:
@@ -68,7 +72,7 @@ class PixelAccess(abc.ABC):
         return result
 
 
-def PixelAccessPillow(PixelAccess):
+class PixelAccessPillow(PixelAccess):
     """
     Pixel access for a Pillow/PIL image. If the image contains transparency, it must be blended with a background 
     colour (default is white).
@@ -78,6 +82,7 @@ def PixelAccessPillow(PixelAccess):
         Create an RGB pixel accessor to a PIL image. Note that if the image has alpha-transparency, it must be blended with a background
         colour - default is white.
         """
+        super().__init__()
         if not _has_pil:
             raise NotImplementedError()
         if 'A' in image.getbands():
