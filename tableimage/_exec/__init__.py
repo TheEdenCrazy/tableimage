@@ -85,7 +85,7 @@ def make_parser() -> argparse.ArgumentParser:
 
     # Seperated output
     output_group.add_argument('--seperate', help=info.separate_output_info, 
-            default=None, type=FileTypeWithAppendMode(mode='a'), nargs=2, metavar=("<html file>", "<css file>"))
+            default=None, type=FileTypeWithAppendMode(mode='a'), nargs=2, metavar=("HTML_FILE", "CSS_FILE"))
 
     parser.add_argument(
         "--append", action='store_true', default=False, help=info.append_info

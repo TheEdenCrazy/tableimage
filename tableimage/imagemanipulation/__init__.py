@@ -1,3 +1,4 @@
+from PIL import Image
 """
 Based off of https://stackoverflow.com/questions/9166400/convert-rgba-png-to-rgb-with-pil 
 """
