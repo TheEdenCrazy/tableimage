@@ -4,6 +4,7 @@ Used for running the module as an independent program rather than using it as a 
 from .. import imagemanipulation, rowlist_to_html_css, data
 import argparse
 import sys
+_sys = sys
 from . import info
 from PIL import Image
 from .._typing import *
@@ -134,9 +135,11 @@ def to_full_html_document(html_template_chunk: str) -> str:
 def to_write_mode(file_in_read_plus_mode):
     """
     Wipe a r+/a file and seek to the beginning as if you just it in write mode.
+    Checks for stdout/stderr and does not perform an operation.
     """
-    file_in_read_plus_mode.seek(0, 0)
-    file_in_read_plus_mode.truncate(0)
+    if file_in_read_plus_mode not in [sys.stdout, sys.stderr]:
+        file_in_read_plus_mode.seek(0, 0)
+        file_in_read_plus_mode.truncate(0)
 
 
 def main():
