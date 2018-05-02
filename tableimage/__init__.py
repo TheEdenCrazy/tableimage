@@ -144,7 +144,7 @@ def rowlist_to_html_css(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivide
         html += '<table style="table-layout:fixed;border:0;border-spacing:0;">\n'
         
         for row in page_rows:
-            html += '<tr style="line-height:{!s}px;">\n'.format(pixel_size)
+            html += '<tr style="height:{!s}px;">\n'.format(pixel_size)
             for colour_row in row:
                 count, colour = colour_row
                 if count <= 1:
@@ -185,7 +185,7 @@ def rowlist_to_html_css(rowlist: List[Union[Tuple[int, data.RGB], data.RowDivide
         # Now to generate CSS
 
         # First, apply the height to all tr children of the table
-        css += 'table#{} tr{{line-height:{!s}px;}}\n'.format(table_unique_id, pixel_size)
+        css += 'table#{} tr{{height:{!s}px;}}\n'.format(table_unique_id, pixel_size)
 
         # Now we generate CSS for the mappings.
         for colour, cssclass in palette.items():
