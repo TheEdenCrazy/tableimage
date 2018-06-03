@@ -7,3 +7,6 @@ Requires the python module Pillow to be installed, and python3.6+
 
 Simply go into the first folder layer (with LICENSE, README.md, and a tableimage folder), then do python -m tableimage --help for all 
 the available arguments and commands.
+
+
+***If on GitHub, this has been moved to: https://gitlab.com/TheEdenCrazy/tableimage***
